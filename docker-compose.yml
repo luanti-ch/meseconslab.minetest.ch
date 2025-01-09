@@ -16,7 +16,7 @@ services:
   networks:
    - terminator
    - default
-  entrypoint: ["--config", "/minetest.conf"]
+  command: ["--config", "/minetest.conf"]
 
  matterbridge:
    image: 42wim/matterbridge:1.26.0
