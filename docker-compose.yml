@@ -2,7 +2,7 @@ version: "2"
 
 services:
  minetest:
-  image: ghcr.io/minetest-hosting/minetest-docker:5.8.0
+  image: ghcr.io/minetest/minetest:5.10.0
   restart: always
   user: root
   volumes:
@@ -16,9 +16,7 @@ services:
   networks:
    - terminator
    - default
-  entrypoint: ["minetestserver", "--config", "/minetest.conf"]
-  labels:
-    - "promtail=true"
+  entrypoint: ["--config", "/minetest.conf"]
 
  matterbridge:
    image: 42wim/matterbridge:1.26.0
@@ -28,16 +26,14 @@ services:
    volumes:
     - ./matterbridge.toml:/etc/matterbridge/matterbridge.toml
     - ./remotenickformat.tengo:/remotenickformat.tengo
-   labels:
-    - "promtail=true"
 
  mesecons-lab-ui:
-  image: ghcr.io/minetest-go/mtui:v1.77
+  image: ghcr.io/minetest-go/mtui:v1.78
   networks:
    - terminator
    - default
   environment:
-   COOKIE_DOMAIN: "meseconslab.minetest.ch"
+   COOKIE_DOMAIN: "meseconslab.luanti.ch"
    COOKIE_SECURE: "true"
    WORLD_DIR: "/root/.minetest/worlds/world"
    API_KEY: "{{mtui_key}}"
@@ -47,13 +43,28 @@ services:
    - "./data/world:/root/.minetest/worlds/world"
    - "./world.mt:/root/.minetest/worlds/world/world.mt"
   labels:
-    - "promtail=true"
     - "traefik.enable=true"
     - "traefik.docker.network=terminator"
-    - "traefik.http.routers.meseconslab.rule=Host(`meseconslab.minetest.ch`)"
-    - "traefik.http.services.meseconslab.loadbalancer.server.port=8080"
-    - "traefik.http.routers.meseconslab.entrypoints=websecure"
-    - "traefik.http.routers.meseconslab.tls.certresolver=default"
+    - "traefik.http.routers.meseconslab-luanti-ch.rule=Host(`meseconslab.luanti.ch`)"
+    - "traefik.http.services.meseconslab-luanti-ch.loadbalancer.server.port=8080"
+    - "traefik.http.routers.meseconslab-luanti-ch.entrypoints=websecure"
+    - "traefik.http.routers.meseconslab-luanti-ch.tls.certresolver=default"
+
+ meseconslab-redirect:
+  image: nginx:1.25.2
+  networks:
+   - terminator
+   - default
+  restart: always
+  labels:
+    - "traefik.enable=true"
+    - "traefik.docker.network=terminator"
+    - "traefik.http.routers.meseconslab-minetest-ch.rule=Host(`meseconslab.minetest.ch`)"
+    - "traefik.http.services.meseconslab-minetest-ch.loadbalancer.server.port=80"
+    - "traefik.http.routers.meseconslab-minetest-ch.entrypoints=websecure"
+    - "traefik.http.routers.meseconslab-minetest-ch.tls.certresolver=default"
+  volumes:
+   - "./redirect.conf:/etc/nginx/conf.d/default.conf:ro"
 
 networks:
  terminator:
